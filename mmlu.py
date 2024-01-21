@@ -51,21 +51,22 @@ class FewShot():
         return prompt
         
 
-def Evaluator():
-    """
-    return the accuracy for the given df
-    """
+class Evaluator():
     def __init__(self, model, tokenizer, promptlizer, choices_id):
         self.model = model
         self.tokenizer = tokenizer
         self.promptlizer = promptlizer
         self.choices_id = choices_id
         self.mapping_list =  {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+    """
+    return the accuracy for the given df
+    """
 
     def __call__(self, df_dev, df_test, base_prompt):
         #  get labels
-        labels = np.ndarray(df_test[5].map(self.mapping_list))
-        logits_of_interest = np.zeros((df_test.shape[1], 4))
+        labels = df_test[5].map(self.mapping_list).values
+        print(labels)
+        logits_of_interest = np.zeros((df_test.shape[0], 4))
         fewshot = FewShot(self.promptlizer, base_prompt, df_dev)
         for idx, row in df_test.iterrows():
             print(idx)
@@ -90,33 +91,39 @@ def Evaluator():
 
 if __name__ == "__main__":
     model_dir = "./models/llama-2-7b/model"
-    model, tokenizer = load_model(model_dir)
-
+    data_dir = "./dataset"
     choices = ["A", "B", "C", "D"]
+
     
     template = "Question: {}\nA: {}\nB: {},\nC: {}\nD: {}\nAnswer: "
     base_prompt = "Please choose the most appropriate answer for the given questions, answer should be among A, B, C, D."
-    data_dir = "./dataset"
-    subject = "machine_learning"
-    data_path_test = os.path.join(data_dir, "test", subject + "_test.csv")
-    data_path_dev = os.path.join(data_dir, "dev", subject + "_dev.csv")
-    df_dev =  pd.read_csv(data_path_dev, header = None)
-    df_test =  pd.read_csv(data_path_test, header = None)
+    
+    """
+    load model
+    """
+    model, tokenizer = load_model(model_dir)
 
     promptlizer = PromptLizer(template)
-
     choices_id = [tokenizer(choice).input_ids[-1] for choice in choices]
 
     evaluator = Evaluator(model, tokenizer, promptlizer, choices_id)
 
-    acc = evaluator(df_dev, df_test, base_prompt)
-    print(acc)
+    accuracy_dict = dict()
+    """
+    get subjects
+    """
+    subjects = sorted([f.split("_test.csv")[0] for f in os.listdir(os.path.join(data_dir, "test")) if "_test.csv" in f])
+    for subject in subjects:
+        """
+        load data
+        """
+        data_path_test = os.path.join(data_dir, "test", subject + "_test.csv")
+        data_path_dev = os.path.join(data_dir, "dev", subject + "_dev.csv")
+        df_dev =  pd.read_csv(data_path_dev, header = None)
+        df_test =  pd.read_csv(data_path_test, header = None)
 
-    print(tokenizer("A"))
-    print(choices_id)
-    r =  df_test.iloc[0]
-    #  print(fewshot(r))
+        accuracy = evaluator(df_dev, df_test, base_prompt)
+        accuracy_dict[subject] = accuracy
+
 
     
-
-
