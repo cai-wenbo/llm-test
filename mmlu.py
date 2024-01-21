@@ -1,3 +1,4 @@
+from re import template
 import torch
 from torch.utils import data
 import transformers
@@ -30,7 +31,11 @@ class PromptLizer():
     def __init__(self, template):
         self.template = template
 
-    #  def __call__(self, record):
+    def __call__(self, record, answer = True):
+        filled_prompt = self.template.format(record[0], record[1], record[2], record[3], record[4])
+        if answer == True:
+            filled_prompt = filled_prompt + record[5]
+        return filled_prompt
 
 
 
@@ -41,9 +46,12 @@ if __name__ == "__main__":
     model_dir = "./models/llama-2-7b/model"
     #  model, tokenizer = load_model(model_dir)
 
+    template = "Question: {}\nA: {}\nB: {},\nC: {}\nD: {}\n Answer: "
     data_dir = "./dataset"
     subject = "machine_learning"
     data_path = os.path.join(data_dir, "dev", subject + "_dev.csv")
     df =  pd.read_csv(data_path, header = None)
-    print(df.shape)
-    print(df.head())
+
+    promptlizer = PromptLizer(template)
+    r =  df.iloc[0]
+    print(promptlizer(r))
