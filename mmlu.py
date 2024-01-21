@@ -38,6 +38,18 @@ class PromptLizer():
         return filled_prompt
 
 
+class FewShot():
+    def __init__(self, promptlizer, base_prompt, dev_df):
+        self.promptlizer = promptlizer
+        prompt = str(base_prompt)
+        for idx, row in dev_df.iterrows():
+            prompt = prompt + "\n" + promptlizer(row)
+        self.prompt = prompt
+
+    def __call__(self, record):
+        prompt = self.prompt + "\n" + promptlizer(record, answer = False)
+        return prompt
+        
 
 #  def load_dataset(
 
@@ -46,12 +58,19 @@ if __name__ == "__main__":
     model_dir = "./models/llama-2-7b/model"
     #  model, tokenizer = load_model(model_dir)
 
-    template = "Question: {}\nA: {}\nB: {},\nC: {}\nD: {}\n Answer: "
+    template = "Question: {}\nA: {}\nB: {},\nC: {}\nD: {}\nAnswer: "
+    base_prompt = "Please choose the right answer for the given questions:"
     data_dir = "./dataset"
     subject = "machine_learning"
-    data_path = os.path.join(data_dir, "dev", subject + "_dev.csv")
-    df =  pd.read_csv(data_path, header = None)
+    data_path_test = os.path.join(data_dir, "test", subject + "_test.csv")
+    data_path_dev = os.path.join(data_dir, "dev", subject + "_dev.csv")
+    df_dev =  pd.read_csv(data_path_dev, header = None)
+    df_test =  pd.read_csv(data_path_test, header = None)
 
     promptlizer = PromptLizer(template)
+
+    fewshot = FewShot(promptlizer, base_prompt, df_dev)
     r =  df.iloc[0]
-    print(promptlizer(r))
+    print(fewshot(r))
+
+
