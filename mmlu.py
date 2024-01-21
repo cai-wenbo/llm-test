@@ -10,6 +10,14 @@ import os
 import csv
 
 
+def write_dict(table_path, encoding_dict):
+    with open(table_path, 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key, value in encoding_dict.items():
+            writer.writerow([key,value])
+        csv_file.close()
+
+
 def load_model(model_dir):
     model = LlamaForCausalLM.from_pretrained(model_dir,
                                              device_map="balanced",
@@ -93,7 +101,7 @@ if __name__ == "__main__":
     model_dir = "./models/llama-2-7b/model"
     data_dir = "./dataset"
     choices = ["A", "B", "C", "D"]
-
+    accuracy_path = "./accuracy.csv"
     
     template = "Question: {}\nA: {}\nB: {},\nC: {}\nD: {}\nAnswer: "
     base_prompt = "Please choose the most appropriate answer for the given questions, answer should be among A, B, C, D."
@@ -126,4 +134,4 @@ if __name__ == "__main__":
         accuracy_dict[subject] = accuracy
 
 
-    
+    write_dict(accuracy_path, accuracy_dict)
