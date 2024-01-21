@@ -51,15 +51,18 @@ class FewShot():
         return prompt
         
 
-#  def load_dataset(
+    
+
 
 
 if __name__ == "__main__":
     model_dir = "./models/llama-2-7b/model"
-    #  model, tokenizer = load_model(model_dir)
+    model, tokenizer = load_model(model_dir)
 
+    choices = ["A", "B", "C", "D"]
+    
     template = "Question: {}\nA: {}\nB: {},\nC: {}\nD: {}\nAnswer: "
-    base_prompt = "Please choose the right answer for the given questions:"
+    base_prompt = "Please choose the most appropriate answer for the given questions, answer should be among A, B, C, D."
     data_dir = "./dataset"
     subject = "machine_learning"
     data_path_test = os.path.join(data_dir, "test", subject + "_test.csv")
@@ -70,7 +73,13 @@ if __name__ == "__main__":
     promptlizer = PromptLizer(template)
 
     fewshot = FewShot(promptlizer, base_prompt, df_dev)
-    r =  df.iloc[0]
+
+    print(tokenizer("A"))
+    choices_id = [tokenizer(choice).input_ids[-1] for choice in choices]
+    print(choices_id)
+    r =  df_test.iloc[0]
     print(fewshot(r))
+
+    
 
 
