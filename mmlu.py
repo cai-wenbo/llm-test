@@ -30,7 +30,7 @@ class PromptLizer():
     def __init__(self, template):
         self.template = template
 
-    def __call__(self, record):
+    #  def __call__(self, record):
 
 
 
@@ -39,10 +39,11 @@ class PromptLizer():
 
 if __name__ == "__main__":
     model_dir = "./models/llama-2-7b/model"
-    model, tokenizer = load_model(model_dir)
+    #  model, tokenizer = load_model(model_dir)
 
-    data = "./dataset"
+    data_dir = "./dataset"
+    subject = "machine_learning"
     data_path = os.path.join(data_dir, "dev", subject + "_dev.csv")
-    df =  pd.read_csv(data_path)
+    df =  pd.read_csv(data_path, header = None)
     print(df.shape)
     print(df.head())
