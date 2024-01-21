@@ -19,12 +19,12 @@ def load_model(model_dir):
     return model, tokenizer
 
 
-def get_ans(prompt, tokenizer, model):
+def get_logits(prompt, tokenizer, model):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
     prompt_tokens = tokenizer(prompt, return_tensors="pt")
     logits = model(prompt_tokens.input_ids.to(device), attention_mask = prompt_tokens.attention_mask.to(device)).logits[0,-1]
+    return logits
 
-    print(logits.shape)
 
 
 class PromptLizer():
@@ -51,6 +51,39 @@ class FewShot():
         return prompt
         
 
+def Evaluator():
+    """
+    return the accuracy for the given df
+    """
+    def __init__(self, model, tokenizer, promptlizer, choices_id):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.promptlizer = promptlizer
+        self.choices_id = choices_id
+        self.mapping_list =  {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+
+    def __call__(self, df_dev, df_test, base_prompt):
+        #  get labels
+        labels = np.ndarray(df_test[5].map(self.mapping_list))
+        logits_of_interest = np.zeros((df_test.shape[1], 4))
+        fewshot = FewShot(self.promptlizer, base_prompt, df_dev)
+        for idx, row in df_test.iterrows():
+            print(idx)
+            prompt = fewshot(row)
+            #  get logits
+            logits = get_logits(prompt, self.tokenizer, self.model).tolist()
+
+            logits_of_interest[idx] = [logits[i] for i in self.choices_id]
+        
+        #  get preds
+        preds = np.argmax(logits_of_interest, axis = 1)
+
+        print(labels.shape)
+        print(preds.shape)
+        correct = preds == labels
+        accuracy = np.mean(correct)
+        
+        return accuracy
     
 
 
@@ -72,13 +105,17 @@ if __name__ == "__main__":
 
     promptlizer = PromptLizer(template)
 
-    fewshot = FewShot(promptlizer, base_prompt, df_dev)
+    choices_id = [tokenizer(choice).input_ids[-1] for choice in choices]
+
+    evaluator = Evaluator(model, tokenizer, promptlizer, choices_id)
+
+    acc = evaluator(df_dev, df_test, base_prompt)
+    print(acc)
 
     print(tokenizer("A"))
-    choices_id = [tokenizer(choice).input_ids[-1] for choice in choices]
     print(choices_id)
     r =  df_test.iloc[0]
-    print(fewshot(r))
+    #  print(fewshot(r))
 
     
 
