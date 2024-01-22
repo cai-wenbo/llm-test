@@ -1,4 +1,4 @@
-from re import template
+from tqdm import tqdm
 import torch
 from torch.utils import data
 import transformers
@@ -30,7 +30,8 @@ def load_model(model_dir):
 def get_logits(prompt, tokenizer, model):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
     prompt_tokens = tokenizer(prompt, return_tensors="pt")
-    logits = model(prompt_tokens.input_ids.to(device), attention_mask = prompt_tokens.attention_mask.to(device)).logits[0,-1]
+    with torch.no_grad():
+        logits = model(prompt_tokens.input_ids.to(device), attention_mask = prompt_tokens.attention_mask.to(device)).logits[0,-1]
     return logits
 
 
@@ -73,11 +74,9 @@ class Evaluator():
     def __call__(self, df_dev, df_test, base_prompt):
         #  get labels
         labels = df_test[5].map(self.mapping_list).values
-        print(labels)
         logits_of_interest = np.zeros((df_test.shape[0], 4))
         fewshot = FewShot(self.promptlizer, base_prompt, df_dev)
-        for idx, row in df_test.iterrows():
-            print(idx)
+        for idx, row in tqdm(df_test.iterrows()):
             prompt = fewshot(row)
             #  get logits
             logits = get_logits(prompt, self.tokenizer, self.model).tolist()
@@ -87,8 +86,6 @@ class Evaluator():
         #  get preds
         preds = np.argmax(logits_of_interest, axis = 1)
 
-        print(labels.shape)
-        print(preds.shape)
         correct = preds == labels
         accuracy = np.mean(correct)
         
@@ -121,7 +118,7 @@ if __name__ == "__main__":
     get subjects
     """
     subjects = sorted([f.split("_test.csv")[0] for f in os.listdir(os.path.join(data_dir, "test")) if "_test.csv" in f])
-    for subject in subjects:
+    for subject in tqdm(subjects):
         """
         load data
         """
