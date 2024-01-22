@@ -1,4 +1,4 @@
-from categories import categories
+from categories import categories, subcategories
 import csv
 import numpy as np
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         csv_reader = csv.reader(f)
         
         for row in csv_reader:
-            accuracy_dict[row[0]] = int(row[1])
+            accuracy_dict[row[0]] = float(row[1])
 
         f.close()
 
@@ -28,7 +28,13 @@ if __name__ == "__main__":
 
     scores = dict()
     for key in categories:
-        accuracy_list = np.ndarray([accuracy_dict[subject] for subject in categories[key]])
-        score[key] = np.mean(accuracy_list)
+        category_accuracy = list()
+        for subject in subcategories:
+            if subcategories[subject][0] in categories[key]:
+                category_accuracy.append(accuracy_dict[subject])
+
+        print(category_accuracy)
+        category_accuracy = np.array(category_accuracy)
+        scores[key] = np.mean(category_accuracy)
 
     write_dict(score_path, scores)
