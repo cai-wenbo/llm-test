@@ -24,7 +24,6 @@ if __name__ == "__main__":
 
         f.close()
 
-    print(accuracy_dict)
 
     scores = dict()
     for key in categories:
@@ -33,7 +32,6 @@ if __name__ == "__main__":
             if subcategories[subject][0] in categories[key]:
                 category_accuracy.append(accuracy_dict[subject])
 
-        print(category_accuracy)
         category_accuracy = np.array(category_accuracy)
         scores[key] = np.mean(category_accuracy)
 
